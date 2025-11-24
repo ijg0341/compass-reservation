@@ -98,21 +98,18 @@ export default function MoveLoginPage() {
   const handleLoginSubmit = loginForm.handleSubmit((data) => {
     setLoginError(null);
 
-    if (data.username === 'user' && data.password === 'password') {
-      const user: MoveUser = {
-        id: '1',
-        username: data.username,
-        apartmentName: data.apartment,
-        dong: data.dong,
-        ho: data.ho,
-        contractorName: '홍길동',
-      };
+    // 어떤 계정이든 로그인 허용
+    const user: MoveUser = {
+      id: '1',
+      username: data.username,
+      apartmentName: data.apartment,
+      dong: data.dong,
+      ho: data.ho,
+      contractorName: '홍길동',
+    };
 
-      login(user);
-      navigate('/move/calendar');
-    } else {
-      setLoginError('아이디 또는 비밀번호가 올바르지 않습니다.');
-    }
+    login(user);
+    navigate('/move/calendar');
   });
 
   const handleAgreeAll = (checked: boolean) => {
@@ -128,10 +125,6 @@ export default function MoveLoginPage() {
 
   return (
     <Box>
-      <Typography variant="h5" component="h1" gutterBottom align="center">
-        입주이사 예약
-      </Typography>
-
       <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
         {steps.map((label) => (
           <Step key={label}>
@@ -142,10 +135,10 @@ export default function MoveLoginPage() {
 
       {activeStep === 0 && (
         <Box>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
             약관동의
           </Typography>
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ mb: 2 }} />
 
           <FormControlLabel
             control={
@@ -162,114 +155,136 @@ export default function MoveLoginPage() {
             sx={{ mb: 2 }}
           />
 
-          <Accordion
-            elevation={0}
-            sx={{ border: '1px solid', borderColor: 'divider' }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Controller
-                name="termsOfService"
-                control={agreementForm.control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        {...field}
-                        checked={field.value}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    }
-                    label="서비스 이용약관 (필수)"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                )}
-              />
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" color="text.secondary">
-                본 서비스 이용약관은 이사예약 서비스 이용에 관한 제반 사항을
-                규정합니다. 이용자는 본 약관에 동의함으로써 서비스를 이용할 수
-                있습니다. 서비스 이용 중 발생하는 모든 책임은 이용자에게
-                있습니다.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+            <Accordion
+              elevation={0}
+              sx={{
+                '&:before': { display: 'none' },
+                borderRadius: 0,
+                boxShadow: 'none',
+                '&:not(:last-child)': {
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Controller
+                  name="termsOfService"
+                  control={agreementForm.control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          {...field}
+                          checked={field.value}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      }
+                      label="서비스 이용약관 (필수)"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                />
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="body2" color="text.secondary">
+                  본 서비스 이용약관은 이사예약 서비스 이용에 관한 제반 사항을
+                  규정합니다. 이용자는 본 약관에 동의함으로써 서비스를 이용할 수
+                  있습니다. 서비스 이용 중 발생하는 모든 책임은 이용자에게
+                  있습니다.
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion
+              elevation={0}
+              sx={{
+                '&:before': { display: 'none' },
+                borderRadius: 0,
+                boxShadow: 'none',
+                '&:not(:last-child)': {
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                },
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Controller
+                  name="privacyPolicy"
+                  control={agreementForm.control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          {...field}
+                          checked={field.value}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      }
+                      label="개인정보 처리방침 (필수)"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                />
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="body2" color="text.secondary">
+                  수집하는 개인정보 항목: 이름, 아파트 정보, 연락처 등. 수집 목적:
+                  이사예약 서비스 제공 및 관리. 보유 기간: 서비스 이용 종료 후 1년
+                  까지.
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion
+              elevation={0}
+              sx={{
+                '&:before': { display: 'none' },
+                borderRadius: 0,
+                boxShadow: 'none',
+              }}
+            >
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Controller
+                  name="moveRules"
+                  control={agreementForm.control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          {...field}
+                          checked={field.value}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      }
+                      label="이사 규정 (필수)"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
+                />
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant="body2" color="text.secondary">
+                  이사 시간은 예약된 시간대 내에서만 진행되어야 합니다. 소음 발생
+                  시 이웃에 대한 배려를 부탁드립니다. 공용 구역 사용 시 관리사무소
+                  규정을 준수해주세요.
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          </Box>
           {agreementForm.formState.errors.termsOfService && (
-            <Typography color="error" variant="caption" sx={{ ml: 2 }}>
+            <Typography color="error" variant="caption" sx={{ ml: 2, display: 'block' }}>
               {agreementForm.formState.errors.termsOfService.message}
             </Typography>
           )}
-
-          <Accordion
-            elevation={0}
-            sx={{ border: '1px solid', borderColor: 'divider' }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Controller
-                name="privacyPolicy"
-                control={agreementForm.control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        {...field}
-                        checked={field.value}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    }
-                    label="개인정보 처리방침 (필수)"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                )}
-              />
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" color="text.secondary">
-                수집하는 개인정보 항목: 이름, 아파트 정보, 연락처 등. 수집 목적:
-                이사예약 서비스 제공 및 관리. 보유 기간: 서비스 이용 종료 후 1년
-                까지.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
           {agreementForm.formState.errors.privacyPolicy && (
-            <Typography color="error" variant="caption" sx={{ ml: 2 }}>
+            <Typography color="error" variant="caption" sx={{ ml: 2, display: 'block' }}>
               {agreementForm.formState.errors.privacyPolicy.message}
             </Typography>
           )}
-
-          <Accordion
-            elevation={0}
-            sx={{ border: '1px solid', borderColor: 'divider' }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Controller
-                name="moveRules"
-                control={agreementForm.control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        {...field}
-                        checked={field.value}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    }
-                    label="이사 규정 (필수)"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                )}
-              />
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant="body2" color="text.secondary">
-                이사 시간은 예약된 시간대 내에서만 진행되어야 합니다. 소음 발생
-                시 이웃에 대한 배려를 부탁드립니다. 공용 구역 사용 시 관리사무소
-                규정을 준수해주세요.
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
           {agreementForm.formState.errors.moveRules && (
-            <Typography color="error" variant="caption" sx={{ ml: 2 }}>
+            <Typography color="error" variant="caption" sx={{ ml: 2, display: 'block' }}>
               {agreementForm.formState.errors.moveRules.message}
             </Typography>
           )}
@@ -279,7 +294,7 @@ export default function MoveLoginPage() {
             fullWidth
             size="large"
             onClick={handleAgreementSubmit}
-            sx={{ mt: 3 }}
+            sx={{ mt: 3, py: 1.5 }}
           >
             다음
           </Button>
@@ -288,10 +303,10 @@ export default function MoveLoginPage() {
 
       {activeStep === 1 && (
         <Box>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
             나의집 찾기
           </Typography>
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ mb: 2 }} />
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Controller
@@ -361,10 +376,10 @@ export default function MoveLoginPage() {
             />
           </Box>
 
-          <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>
             로그인
           </Typography>
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ mb: 2 }} />
 
           {loginError && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -404,7 +419,7 @@ export default function MoveLoginPage() {
           </Box>
 
           <Alert severity="info" sx={{ mt: 2 }}>
-            테스트 계정: user / password
+            미리 안내된 아이디와 비밀번호를 입력해주세요
           </Alert>
 
           <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
@@ -413,6 +428,7 @@ export default function MoveLoginPage() {
               fullWidth
               size="large"
               onClick={() => setActiveStep(0)}
+              sx={{ py: 1.5 }}
             >
               이전
             </Button>
@@ -421,6 +437,7 @@ export default function MoveLoginPage() {
               fullWidth
               size="large"
               onClick={handleLoginSubmit}
+              sx={{ py: 1.5 }}
             >
               로그인
             </Button>

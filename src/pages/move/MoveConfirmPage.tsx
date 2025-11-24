@@ -7,7 +7,7 @@ import {
   Divider,
   Alert,
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { CheckCircle } from '@mui/icons-material';
 import { useAuthStore } from '../../stores/authStore';
 import type { TimeSlot } from '../../types/move';
 
@@ -68,7 +68,7 @@ export default function MoveConfirmPage() {
   return (
     <Box>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <CheckCircleOutlineIcon
+        <CheckCircle
           sx={{ fontSize: 64, color: 'success.main', mb: 2 }}
         />
         <Typography variant="h5" component="h1" gutterBottom>
@@ -81,10 +81,9 @@ export default function MoveConfirmPage() {
 
       <Box
         sx={{
+          bgcolor: '#F5F5F5',
+          borderRadius: 2,
           p: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
         }}
       >
         <Typography variant="h6" gutterBottom>

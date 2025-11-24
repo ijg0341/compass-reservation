@@ -102,8 +102,15 @@ export default function MoveCalendarPage() {
   };
 
   return (
-    <Box>
-      <Typography variant="h5" component="h1" gutterBottom align="center">
+    <Box sx={{ px: 2, py: 3 }}>
+      <Typography
+        variant="h5"
+        component="h1"
+        fontWeight="bold"
+        gutterBottom
+        align="center"
+        sx={{ mb: 3 }}
+      >
         이사 날짜 선택
       </Typography>
 
@@ -113,27 +120,32 @@ export default function MoveCalendarPage() {
           alignItems: 'center',
           justifyContent: 'center',
           mb: 3,
+          bgcolor: '#FAFAFA',
+          py: 1.5,
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
         }}
       >
-        <IconButton onClick={handlePrevMonth}>
+        <IconButton onClick={handlePrevMonth} size="small">
           <ChevronLeftIcon />
         </IconButton>
-        <Typography variant="h6" sx={{ mx: 2 }}>
+        <Typography variant="h6" fontWeight="bold" sx={{ mx: 3, minWidth: 140, textAlign: 'center' }}>
           {currentMonth.format('YYYY년 M월')}
         </Typography>
-        <IconButton onClick={handleNextMonth}>
+        <IconButton onClick={handleNextMonth} size="small">
           <ChevronRightIcon />
         </IconButton>
       </Box>
 
-      <Grid container spacing={0.5} sx={{ mb: 1 }}>
+      <Grid container spacing={1} sx={{ mb: 2 }}>
         {weekDays.map((day, index) => (
           <Grid
             key={day}
             size={12 / 7}
             sx={{
               textAlign: 'center',
-              py: 1,
+              py: 1.5,
               color:
                 index === 0
                   ? 'error.main'
@@ -150,13 +162,14 @@ export default function MoveCalendarPage() {
 
       <Box
         sx={{
-          p: 1,
+          p: 2,
           border: '1px solid',
           borderColor: 'divider',
-          borderRadius: 1,
+          borderRadius: 2,
+          bgcolor: '#FAFAFA',
         }}
       >
-        <Grid container spacing={0.5}>
+        <Grid container spacing={1}>
           {calendarDays.map((day, index) => (
             <Grid key={index} size={12 / 7}>
               <Box
@@ -166,30 +179,53 @@ export default function MoveCalendarPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: 1,
+                  borderRadius: 2,
                   cursor: day && !isUnavailable(day) ? 'pointer' : 'default',
                   backgroundColor:
                     day &&
                     selectedDate === currentMonth.date(day).format('YYYY-MM-DD')
-                      ? 'primary.light'
-                      : 'transparent',
+                      ? 'primary.main'
+                      : day && isUnavailable(day)
+                        ? '#E0E0E0'
+                        : '#FFFFFF',
+                  border: '1px solid',
+                  borderColor:
+                    day &&
+                    selectedDate === currentMonth.date(day).format('YYYY-MM-DD')
+                      ? 'primary.main'
+                      : 'divider',
                   '&:hover': {
                     backgroundColor:
                       day && !isUnavailable(day)
-                        ? 'action.hover'
-                        : 'transparent',
+                        ? day &&
+                          selectedDate ===
+                            currentMonth.date(day).format('YYYY-MM-DD')
+                          ? 'primary.dark'
+                          : 'action.hover'
+                        : '#E0E0E0',
                   },
                   position: 'relative',
+                  transition: 'all 0.2s ease-in-out',
                 }}
               >
                 {day && (
                   <>
                     <Typography
                       variant="body2"
+                      fontWeight={
+                        selectedDate ===
+                        currentMonth.date(day).format('YYYY-MM-DD')
+                          ? 'bold'
+                          : 'medium'
+                      }
                       sx={{
-                        color: isUnavailable(day)
-                          ? 'text.disabled'
-                          : 'text.primary',
+                        color:
+                          selectedDate ===
+                          currentMonth.date(day).format('YYYY-MM-DD')
+                            ? '#FFFFFF'
+                            : isUnavailable(day)
+                              ? 'text.disabled'
+                              : 'text.primary',
                       }}
                     >
                       {day}
@@ -200,7 +236,7 @@ export default function MoveCalendarPage() {
                           position: 'absolute',
                           fontSize: '1.2rem',
                           color: 'error.main',
-                          opacity: 0.7,
+                          opacity: 0.6,
                         }}
                       />
                     )}
@@ -212,27 +248,40 @@ export default function MoveCalendarPage() {
         </Grid>
       </Box>
 
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ mt: 2, display: 'block' }}
+      <Box
+        sx={{
+          mt: 3,
+          p: 2,
+          bgcolor: '#FFF9E6',
+          borderRadius: 2,
+          border: '1px solid #FFE082',
+        }}
       >
-        * X 표시된 날짜는 예약이 불가합니다.
-      </Typography>
+        <Typography variant="caption" color="text.secondary" fontWeight="medium">
+          * X 표시된 날짜는 예약이 불가합니다.
+        </Typography>
+      </Box>
 
       <Dialog
         open={showTimeSlotDialog}
         onClose={() => setShowTimeSlotDialog(false)}
         fullWidth
         maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
       >
         <DialogTitle>
-          시간대 선택
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="h6" fontWeight="bold">
+            시간대 선택
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {selectedDate && dayjs(selectedDate).format('YYYY년 M월 D일')}
           </Typography>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pt: 2 }}>
           <RadioGroup
             value={selectedSlot || ''}
             onChange={(e) => handleSlotSelect(e.target.value as TimeSlot)}
@@ -241,19 +290,45 @@ export default function MoveCalendarPage() {
               <FormControlLabel
                 key={slot}
                 value={slot}
-                control={<Radio />}
-                label={slot}
-                sx={{ mb: 1 }}
+                control={<Radio size="small" />}
+                label={
+                  <Typography variant="body2" fontWeight="medium">
+                    {slot}
+                  </Typography>
+                }
+                sx={{
+                  mb: 1.5,
+                  py: 1,
+                  px: 1.5,
+                  border: '1px solid',
+                  borderColor: selectedSlot === slot ? 'primary.main' : 'divider',
+                  borderRadius: 2,
+                  backgroundColor:
+                    selectedSlot === slot ? 'primary.light' : 'transparent',
+                  '&:hover': {
+                    backgroundColor:
+                      selectedSlot === slot ? 'primary.light' : 'action.hover',
+                  },
+                  transition: 'all 0.2s ease-in-out',
+                }}
               />
             ))}
           </RadioGroup>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowTimeSlotDialog(false)}>취소</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            onClick={() => setShowTimeSlotDialog(false)}
+            size="large"
+            sx={{ py: 1.5 }}
+          >
+            취소
+          </Button>
           <Button
             onClick={handleTimeSlotConfirm}
             variant="contained"
             disabled={!selectedSlot}
+            size="large"
+            sx={{ py: 1.5, minWidth: 120 }}
           >
             선택
           </Button>
@@ -265,22 +340,76 @@ export default function MoveCalendarPage() {
         onClose={() => setShowConfirmDialog(false)}
         fullWidth
         maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
       >
-        <DialogTitle>예약 확인</DialogTitle>
+        <DialogTitle>
+          <Typography variant="h6" fontWeight="bold">
+            예약 확인
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ py: 1 }}>
-            <Typography variant="body1" gutterBottom>
-              <strong>예약일:</strong>{' '}
-              {selectedDate && dayjs(selectedDate).format('YYYY년 M월 D일')}
-            </Typography>
-            <Typography variant="body1">
-              <strong>시간대:</strong> {selectedSlot}
-            </Typography>
+          <Box sx={{ py: 2 }}>
+            <Box
+              sx={{
+                mb: 2,
+                p: 2,
+                bgcolor: '#F5F5F5',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 0.5 }}
+              >
+                예약일
+              </Typography>
+              <Typography variant="body1" fontWeight="bold">
+                {selectedDate && dayjs(selectedDate).format('YYYY년 M월 D일')}
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                p: 2,
+                bgcolor: '#F5F5F5',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 0.5 }}
+              >
+                시간대
+              </Typography>
+              <Typography variant="body1" fontWeight="bold">
+                {selectedSlot}
+              </Typography>
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowConfirmDialog(false)}>취소</Button>
-          <Button onClick={handleReservationConfirm} variant="contained">
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button
+            onClick={() => setShowConfirmDialog(false)}
+            size="large"
+            sx={{ py: 1.5 }}
+          >
+            취소
+          </Button>
+          <Button
+            onClick={handleReservationConfirm}
+            variant="contained"
+            size="large"
+            sx={{ py: 1.5, minWidth: 120 }}
+          >
             확인
           </Button>
         </DialogActions>

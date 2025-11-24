@@ -92,12 +92,20 @@ export default function MoveListPage() {
 
   return (
     <Box>
-      <Typography variant="h5" component="h1" gutterBottom align="center">
+      <Typography
+        variant="h5"
+        component="h1"
+        fontWeight={700}
+        gutterBottom
+        align="center"
+      >
         입주이사 예약 리스트
       </Typography>
 
       {reservations.length === 0 ? (
-        <Alert severity="info">예약 내역이 없습니다.</Alert>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Alert severity="info">예약 내역이 없습니다.</Alert>
+        </Box>
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {reservations.map((reservation) => (
@@ -107,7 +115,7 @@ export default function MoveListPage() {
                 p: 3,
                 border: '1px solid',
                 borderColor: 'divider',
-                borderRadius: 1,
+                borderRadius: 2,
                 backgroundColor:
                   reservation.status === 'cancelled'
                     ? 'grey.50'
@@ -154,6 +162,7 @@ export default function MoveListPage() {
                 <Button
                   variant="outlined"
                   color="error"
+                  size="large"
                   fullWidth
                   sx={{ mt: 2 }}
                   onClick={() => handleCancelClick(reservation.id)}
@@ -190,11 +199,18 @@ export default function MoveListPage() {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCancelDialogOpen(false)}>아니오</Button>
+          <Button
+            onClick={() => setCancelDialogOpen(false)}
+            variant="outlined"
+            size="large"
+          >
+            아니오
+          </Button>
           <Button
             onClick={handleCancelConfirm}
             color="error"
             variant="contained"
+            size="large"
           >
             예약 취소
           </Button>
