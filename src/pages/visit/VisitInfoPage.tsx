@@ -1,3 +1,57 @@
+import { Box, Button } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { ChevronRight } from '@mui/icons-material';
+
+export default function VisitInfoPage() {
+  const navigate = useNavigate();
+
+  return (
+    <Box sx={{ bgcolor: '#F5F5F5', minHeight: '100vh' }}>
+      <Box
+        sx={{
+          maxWidth: 480,
+          mx: 'auto',
+          borderLeft: '1px solid #E0E0E0',
+          borderRight: '1px solid #E0E0E0',
+          minHeight: '100vh',
+          bgcolor: '#FFFFFF',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* 이미지 */}
+        <Box
+          component="img"
+          src="/visit-info.png"
+          alt="창원동읍 한양립스 더퍼스트 방문예약 안내"
+          sx={{
+            width: '100%',
+            display: 'block',
+          }}
+        />
+
+        {/* 하단 버튼 */}
+        <Box sx={{ px: 3, pb: 3, pt: 3, mt: 'auto' }}>
+          <Button
+            fullWidth
+            variant="contained"
+            size="large"
+            endIcon={<ChevronRight />}
+            onClick={() => navigate('/visit/app-download')}
+            sx={{
+              py: 1.5,
+              fontSize: '1rem',
+            }}
+          >
+            방문예약 신청하기
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+/* 기존 코드 - 주석 처리
 import { useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +60,6 @@ import { ChevronRight } from '@mui/icons-material';
 export default function VisitInfoPage() {
   const navigate = useNavigate();
 
-  // HTML 에디터에서 삽입될 콘텐츠 (어드민에서 관리)
   const [htmlContent] = useState<string>(`
 <div>
   <h3>장소</h3>
@@ -40,7 +93,6 @@ export default function VisitInfoPage() {
 
   return (
     <Box sx={{ bgcolor: '#F5F5F5', minHeight: '100vh' }}>
-      {/* 모바일 래퍼 - 중앙 정렬 및 양쪽 테두리 */}
       <Box
         sx={{
           maxWidth: 480,
@@ -51,7 +103,6 @@ export default function VisitInfoPage() {
           bgcolor: '#FFFFFF',
         }}
       >
-        {/* Hero 섹션 - 삼각형 하단 (편지지 모양) */}
         <Box
           sx={{
             height: 360,
@@ -70,7 +121,6 @@ export default function VisitInfoPage() {
             clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
           }}
         >
-          {/* 오버레이 그라디언트 */}
           <Box
             sx={{
               position: 'absolute',
@@ -82,7 +132,6 @@ export default function VisitInfoPage() {
             }}
           />
 
-          {/* 아파트 로고 (컴패스 로고 대신) */}
           <img
             src="/apartment-logo.svg"
             alt="Apartment Logo"
@@ -124,7 +173,6 @@ export default function VisitInfoPage() {
           </Box>
         </Box>
 
-        {/* HTML 에디터 콘텐츠 영역 */}
         <Box
           dangerouslySetInnerHTML={{ __html: htmlContent }}
           sx={{
@@ -165,7 +213,6 @@ export default function VisitInfoPage() {
           }}
         />
 
-        {/* CTA 버튼 */}
         <Box sx={{ px: 3, pb: 3 }}>
           <Button
             fullWidth
@@ -185,3 +232,4 @@ export default function VisitInfoPage() {
     </Box>
   );
 }
+*/
