@@ -32,3 +32,25 @@ export type {
   MoveReservationStatus,
   MoveReservation,
 } from './moveReservation';
+
+// API types
+export type {
+  ApiResponse as ApiResponseType,
+  PaginatedResponse as PaginatedResponseType,
+  AvailableSlotsParams,
+  TimeSlotData,
+  AvailableDateData,
+  AvailableSlotsData,
+  AvailableSlotsResponse,
+  DongsParams,
+  DongData,
+  DongsListData,
+  DongsResponse,
+  DongHosParams,
+  DongHoData,
+  DongHosListData,
+  DongHosResponse,
+  CreateVisitScheduleRequest,
+  VisitScheduleData,
+  CreateVisitScheduleResponse,
+} from './api';
