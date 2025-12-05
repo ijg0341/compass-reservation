@@ -253,6 +253,7 @@ export default function PrevisitReservationPage() {
         reservation_time: data.timeSlotId,
         writer_name: data.name,
         writer_phone: phoneNumber,
+        memo: '',
       });
 
       // 예약완료 페이지로 이동
