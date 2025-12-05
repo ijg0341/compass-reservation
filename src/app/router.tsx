@@ -11,6 +11,7 @@ const VisitInfoPage = lazy(() => import('../pages/visit/VisitInfoPage'));
 const AppDownloadPage = lazy(() => import('../pages/visit/AppDownloadPage'));
 const VisitReservationPage = lazy(() => import('../pages/visit/VisitReservationPage'));
 const VisitCompletePage = lazy(() => import('../pages/visit/VisitCompletePage'));
+const PrevisitReservationPage = lazy(() => import('../pages/visit/PrevisitReservationPage'));
 const MoveLoginPage = lazy(() => import('../pages/move/MoveLoginPage'));
 const MoveCalendarPage = lazy(() => import('../pages/move/MoveCalendarPage'));
 const MoveConfirmPage = lazy(() => import('../pages/move/MoveConfirmPage'));
@@ -62,6 +63,15 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<LoadingFallback />}>
         <VisitCompletePage />
+      </Suspense>
+    ),
+  },
+  // 사전방문 예약 (해시 검증 URL)
+  {
+    path: '/visit/:id/:hash',
+    element: (
+      <Suspense fallback={<LoadingFallback />}>
+        <PrevisitReservationPage />
       </Suspense>
     ),
   },

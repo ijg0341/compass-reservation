@@ -4,3 +4,4 @@
 export { default as VisitInfoPage } from './VisitInfoPage.tsx';
 export { default as AppDownloadPage } from './AppDownloadPage.tsx';
 export { default as VisitReservationPage } from './VisitReservationPage.tsx';
+export { default as PrevisitReservationPage } from './PrevisitReservationPage.tsx';
