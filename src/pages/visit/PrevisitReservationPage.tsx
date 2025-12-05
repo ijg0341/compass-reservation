@@ -1,7 +1,6 @@
 /**
- * 사전방문 예약 페이지 (/visit/:id/:hash)
- * URL의 ID와 hash를 검증하여 접근을 제어
- * 모든 API는 previsit_id 기준으로 동작
+ * 사전방문 예약 페이지 (/visit/:uuid)
+ * UUID 기반 접근 (보안을 위해 추측 불가능한 UUID 사용)
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
@@ -34,18 +33,17 @@ import {
 } from '@mui/material';
 import { Warning as WarningIcon } from '@mui/icons-material';
 import {
-  getPrevisit,
-  getPrevisitAvailableSlots,
-  getPrevisitDongs,
-  getPrevisitDonghos,
-  createPrevisitReservation,
+  getCustomerPrevisit,
+  getCustomerDongs,
+  getCustomerDonghos,
+  createCustomerPrevisitReservation,
+  generateTimeSlots,
 } from '@/lib/api/previsitApi';
-import { validatePrevisitHash } from '@/lib/utils/hash';
 import type {
-  PrevisitData,
-  PrevisitAvailableDate,
-  PrevisitAvailableTimeSlot,
-  PrevisitDonghoData,
+  CustomerPrevisitData,
+  CustomerDonghoData,
+  GeneratedDateSlot,
+  GeneratedTimeSlot,
 } from '@/types/api';
 
 // 예약 안내 문구
@@ -73,19 +71,19 @@ type ReservationFormData = z.infer<typeof reservationSchema>;
 
 export default function PrevisitReservationPage() {
   const navigate = useNavigate();
-  const { id, hash } = useParams<{ id: string; hash: string }>();
+  const { uuid } = useParams<{ uuid: string }>();
 
   // 사전방문 정보 상태
-  const [previsit, setPrevisit] = useState<PrevisitData | null>(null);
+  const [previsit, setPrevisit] = useState<CustomerPrevisitData | null>(null);
   const [isValidating, setIsValidating] = useState(true);
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // API 데이터 상태
-  const [availableDates, setAvailableDates] = useState<PrevisitAvailableDate[]>([]);
+  const [availableDates, setAvailableDates] = useState<GeneratedDateSlot[]>([]);
   const [maxLimit, setMaxLimit] = useState<number>(0);
-  const [buildings, setBuildings] = useState<string[]>([]); // 동 목록 (문자열 배열)
-  const [units, setUnits] = useState<PrevisitDonghoData[]>([]); // 호 목록
-  const [timeSlots, setTimeSlots] = useState<PrevisitAvailableTimeSlot[]>([]);
+  const [buildings, setBuildings] = useState<string[]>([]);
+  const [units, setUnits] = useState<CustomerDonghoData[]>([]);
+  const [timeSlots, setTimeSlots] = useState<GeneratedTimeSlot[]>([]);
 
   // UI 상태
   const [selectedDateTab, setSelectedDateTab] = useState(0);
@@ -116,35 +114,20 @@ export default function PrevisitReservationPage() {
   const selectedBuilding = watch('building');
   const selectedTimeSlotId = watch('timeSlotId');
 
-  // URL 파라미터 검증 및 사전방문 정보 로드
+  // UUID로 사전방문 정보 로드
   useEffect(() => {
-    async function validateAndLoad() {
-      if (!id || !hash) {
-        setValidationError('잘못된 접근입니다.');
-        setIsValidating(false);
-        return;
-      }
-
-      const previsitId = parseInt(id, 10);
-      if (isNaN(previsitId)) {
+    async function loadPrevisit() {
+      if (!uuid) {
         setValidationError('잘못된 접근입니다.');
         setIsValidating(false);
         return;
       }
 
       try {
-        // 1. 사전방문 정보 조회
-        const previsitData = await getPrevisit(previsitId);
+        // UUID로 사전방문 정보 조회
+        const previsitData = await getCustomerPrevisit(uuid);
 
-        // 2. 해시 검증
-        const isValid = validatePrevisitHash(previsitId, previsitData.name, hash);
-        if (!isValid) {
-          setValidationError('잘못된 접근입니다. URL을 확인해주세요.');
-          setIsValidating(false);
-          return;
-        }
-
-        // 3. 날짜 유효성 검사
+        // 날짜 유효성 검사
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const endDate = new Date(previsitData.date_end);
@@ -165,10 +148,10 @@ export default function PrevisitReservationPage() {
       }
     }
 
-    validateAndLoad();
-  }, [id, hash]);
+    loadPrevisit();
+  }, [uuid]);
 
-  // 사전방문 정보 로드 후 예약 가능 일정 조회 (previsit_id 기준)
+  // 사전방문 정보 로드 후 시간 슬롯 및 동 목록 조회
   useEffect(() => {
     async function fetchInitialData() {
       if (!previsit) return;
@@ -177,20 +160,20 @@ export default function PrevisitReservationPage() {
       setError(null);
 
       try {
-        // 1. 예약 가능 일정 조회 (previsit_id 사용)
-        const slotsData = await getPrevisitAvailableSlots(previsit.id);
+        // 1. 시간 슬롯 생성 (프론트엔드에서 계산)
+        const slots = generateTimeSlots(previsit);
 
-        // 2. 동 목록 조회 (previsit_id 사용)
-        const dongsData = await getPrevisitDongs(previsit.id);
+        // 2. 동 목록 조회 (project_id 사용)
+        const dongsData = await getCustomerDongs(previsit.project_id);
 
-        setAvailableDates(slotsData.dates);
-        setMaxLimit(slotsData.max_limit);
+        setAvailableDates(slots);
+        setMaxLimit(previsit.max_limit || 0);
         setBuildings(dongsData);
 
         // 첫 번째 날짜의 시간 슬롯 설정
-        if (slotsData.dates.length > 0) {
-          setTimeSlots(slotsData.dates[0].times);
-          setValue('dateId', slotsData.dates[0].date);
+        if (slots.length > 0) {
+          setTimeSlots(slots[0].times);
+          setValue('dateId', slots[0].date);
         }
       } catch (err) {
         console.error('초기 데이터 로드 실패:', err);
@@ -203,7 +186,7 @@ export default function PrevisitReservationPage() {
     fetchInitialData();
   }, [previsit, setValue]);
 
-  // 동 선택 시 호 목록 조회 (previsit_id + dong 기준)
+  // 동 선택 시 호 목록 조회
   useEffect(() => {
     async function fetchUnits() {
       if (!selectedBuilding || !previsit) {
@@ -213,7 +196,7 @@ export default function PrevisitReservationPage() {
 
       setIsUnitsLoading(true);
       try {
-        const unitsData = await getPrevisitDonghos(previsit.id, selectedBuilding);
+        const unitsData = await getCustomerDonghos(previsit.project_id, selectedBuilding);
         setUnits(unitsData);
         setValue('unitId', '');
       } catch (err) {
@@ -252,7 +235,7 @@ export default function PrevisitReservationPage() {
   };
 
   const onSubmit = async (data: ReservationFormData) => {
-    if (!previsit) {
+    if (!previsit || !uuid) {
       setError('사전방문 정보를 찾을 수 없습니다.');
       return;
     }
@@ -263,9 +246,8 @@ export default function PrevisitReservationPage() {
     const selectedUnit = units.find((u) => String(u.id) === data.unitId);
 
     try {
-      // 사전방문 예약 API 호출 (previsit_id 사용)
-      await createPrevisitReservation({
-        previsit_id: previsit.id,
+      // 사전방문 예약 API 호출 (project_id, uuid 사용)
+      await createCustomerPrevisitReservation(previsit.project_id, uuid, {
         dongho_id: Number(data.unitId),
         reservation_date: data.dateId,
         reservation_time: data.timeSlotId,
@@ -605,7 +587,7 @@ export default function PrevisitReservationPage() {
                                   선택
                                 </TableCell>
                                 <TableCell align="center">시간</TableCell>
-                                <TableCell align="center">예약 현황</TableCell>
+                                <TableCell align="center">예약 가능</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -658,7 +640,7 @@ export default function PrevisitReservationPage() {
                                       }
                                       fontWeight="bold"
                                     >
-                                      {slot.available}/{maxLimit}
+                                      {maxLimit > 0 ? `${slot.available}/${maxLimit}` : '가능'}
                                     </Typography>
                                   </TableCell>
                                 </TableRow>

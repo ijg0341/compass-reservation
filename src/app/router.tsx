@@ -66,9 +66,9 @@ const router = createBrowserRouter([
       </Suspense>
     ),
   },
-  // 사전방문 예약 (해시 검증 URL)
+  // 사전방문 예약 (UUID 기반 URL)
   {
-    path: '/visit/:id/:hash',
+    path: '/visit/:uuid',
     element: (
       <Suspense fallback={<LoadingFallback />}>
         <PrevisitReservationPage />

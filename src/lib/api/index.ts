@@ -1,5 +1,16 @@
 export { apiClient, api } from './client';
 export { getAvailableSlots, getDongs, getDongHos, createVisitSchedule } from './reservationApi';
+
+// Customer API (신규)
+export {
+  getCustomerPrevisit,
+  getCustomerDongs,
+  getCustomerDonghos,
+  createCustomerPrevisitReservation,
+  generateTimeSlots,
+} from './previsitApi';
+
+// 레거시 API (하위 호환성)
 export {
   getPrevisit,
   getPrevisitAvailableSlots,

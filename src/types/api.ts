@@ -1,5 +1,6 @@
 /**
  * API 공통 타입 및 방문예약 API 타입 정의
+ * API 스펙: 2025-12-05 (Customer API 기준)
  */
 
 /** API 공통 응답 래퍼 */
@@ -19,14 +20,8 @@ export interface PaginatedResponse<T> {
 }
 
 // ============================================================================
-// 예약 가능 일정 조회 API
-// GET /reservations/available-slots?project_id={id}&visit_info_id={id}
+// 기존 방문예약 API (레거시 - 추후 제거 예정)
 // ============================================================================
-
-export interface AvailableSlotsParams {
-  project_id: number;
-  visit_info_id: number;
-}
 
 export interface TimeSlotData {
   time: string;
@@ -51,15 +46,6 @@ export interface AvailableSlotsData {
 
 export type AvailableSlotsResponse = ApiResponse<AvailableSlotsData>;
 
-// ============================================================================
-// 동 목록 조회 API
-// GET /reservations/dongs?visit_info_id={id}
-// ============================================================================
-
-export interface DongsParams {
-  visit_info_id: number;
-}
-
 export interface DongData {
   id: string;
   name: string;
@@ -71,16 +57,6 @@ export interface DongsListData {
 }
 
 export type DongsResponse = ApiResponse<DongsListData>;
-
-// ============================================================================
-// 호 목록 조회 API
-// GET /reservations/dong-hos?visit_info_id={id}&dong_id={dongId}
-// ============================================================================
-
-export interface DongHosParams {
-  visit_info_id: number;
-  dong_id?: number;
-}
 
 export interface DongHoData {
   id: string;
@@ -98,11 +74,6 @@ export interface DongHosListData {
 }
 
 export type DongHosResponse = ApiResponse<DongHosListData>;
-
-// ============================================================================
-// 방문일정 등록 API
-// POST /reservations/visit-schedules
-// ============================================================================
 
 export interface CreateVisitScheduleRequest {
   visit_info_id: number;
@@ -127,8 +98,96 @@ export interface VisitScheduleData {
 export type CreateVisitScheduleResponse = ApiResponse<VisitScheduleData>;
 
 // ============================================================================
-// 사전방문 조회 API
-// GET /previsit/{id}
+// Customer API - 사전방문 (2025-12-05 UUID 기반 스펙)
+// Base URL: /customer/project/{projectId}/previsit/{uuid}
+// ============================================================================
+
+/**
+ * 사전방문 행사 정보
+ * GET /customer/project/{projectId}/previsit/{uuid}
+ */
+export interface CustomerPrevisitData {
+  id: number;
+  uuid: string;
+  project_id: number;
+  name: string;
+  date_begin: string;
+  date_end: string;
+  max_limit: number | null;
+  time_first: string;
+  time_last: string;
+  time_unit: number;
+  image_file_id: number | null;
+}
+
+export type CustomerPrevisitResponse = ApiResponse<CustomerPrevisitData>;
+
+/**
+ * 동 목록
+ * GET /customer/project/{projectId}/dongs
+ */
+export interface CustomerDongData {
+  dong: string;
+}
+
+export interface CustomerDongListData {
+  list: CustomerDongData[];
+}
+
+export type CustomerDongsResponse = ApiResponse<CustomerDongListData>;
+
+/**
+ * 동호 목록
+ * GET /customer/project/{projectId}/donghos?dong={dong}
+ */
+export interface CustomerDonghoData {
+  id: number;
+  dong: string;
+  ho: string;
+  unit_type: string | null;
+}
+
+export interface CustomerDonghoListData {
+  list: CustomerDonghoData[];
+}
+
+export type CustomerDonghosResponse = ApiResponse<CustomerDonghoListData>;
+
+/**
+ * 사전방문 예약 등록
+ * POST /customer/project/{projectId}/previsit/{uuid}/reservations
+ */
+export interface CustomerPrevisitReservationRequest {
+  dongho_id: number;
+  reservation_date: string;
+  reservation_time: string;
+  writer_name: string;
+  writer_phone: string;
+  memo?: string;
+}
+
+export interface CustomerPrevisitReservationResultData {
+  id: number;
+}
+
+export type CustomerPrevisitReservationResponse = ApiResponse<CustomerPrevisitReservationResultData>;
+
+// ============================================================================
+// 시간 슬롯 생성용 타입 (프론트엔드에서 계산)
+// ============================================================================
+
+export interface GeneratedTimeSlot {
+  time: string;
+  available: number;
+}
+
+export interface GeneratedDateSlot {
+  date: string;
+  times: GeneratedTimeSlot[];
+}
+
+// ============================================================================
+// 레거시 타입 (하위 호환성)
 // ============================================================================
 
 export interface PrevisitData {
@@ -145,11 +204,6 @@ export interface PrevisitData {
 }
 
 export type PrevisitResponse = ApiResponse<PrevisitData>;
-
-// ============================================================================
-// 사전방문 예약 API (previsit_id 기준)
-// GET /previsit-reservations/available-slots?previsit_id={id}
-// ============================================================================
 
 export interface PrevisitAvailableTimeSlot {
   time: string;
@@ -173,12 +227,6 @@ export interface PrevisitAvailableSlotsData {
 }
 
 export type PrevisitAvailableSlotsResponse = ApiResponse<PrevisitAvailableSlotsData>;
-
-// ============================================================================
-// 사전방문 동/호 조회 API
-// GET /previsit-reservations/dongs?previsit_id={id}
-// GET /previsit-reservations/donghos?previsit_id={id}&dong={dong}
-// ============================================================================
 
 export interface PrevisitDongData {
   dong: string;
@@ -204,11 +252,6 @@ export interface PrevisitDonghoListData {
 }
 
 export type PrevisitDonghosResponse = ApiResponse<PrevisitDonghoListData>;
-
-// ============================================================================
-// 사전방문 예약 등록 API
-// POST /previsit-reservations
-// ============================================================================
 
 export interface CreatePrevisitReservationRequest {
   previsit_id: number;
