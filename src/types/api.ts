@@ -174,18 +174,35 @@ export interface CustomerPrevisitReservationResultData {
 export type CustomerPrevisitReservationResponse = ApiResponse<CustomerPrevisitReservationResultData>;
 
 // ============================================================================
-// 시간 슬롯 생성용 타입 (프론트엔드에서 계산)
+// 예약 가능 일정 타입
 // ============================================================================
 
-export interface GeneratedTimeSlot {
+export interface AvailableTimeSlot {
   time: string;
   available: number;
 }
 
-export interface GeneratedDateSlot {
+export interface AvailableDateSlot {
   date: string;
-  times: GeneratedTimeSlot[];
+  times: AvailableTimeSlot[];
 }
+
+export interface AvailableSlotsData {
+  previsit_id: number;
+  date_begin: string;
+  date_end: string;
+  time_first: string;
+  time_last: string;
+  time_unit: number;
+  max_limit: number;
+  dates: AvailableDateSlot[];
+}
+
+export type CustomerAvailableSlotsResponse = ApiResponse<AvailableSlotsData>;
+
+// 하위 호환성을 위한 별칭
+export type GeneratedTimeSlot = AvailableTimeSlot;
+export type GeneratedDateSlot = AvailableDateSlot;
 
 // ============================================================================
 // 레거시 타입 (하위 호환성)

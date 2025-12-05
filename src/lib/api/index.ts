@@ -7,7 +7,7 @@ export {
   getCustomerDongs,
   getCustomerDonghos,
   createCustomerPrevisitReservation,
-  generateTimeSlots,
+  getCustomerAvailableSlots,
 } from './previsitApi';
 
 // 레거시 API (하위 호환성)

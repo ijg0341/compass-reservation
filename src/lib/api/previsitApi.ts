@@ -13,8 +13,10 @@ import type {
   CustomerPrevisitReservationRequest,
   CustomerPrevisitReservationResponse,
   CustomerPrevisitReservationResultData,
-  GeneratedDateSlot,
-  GeneratedTimeSlot,
+  CustomerAvailableSlotsResponse,
+  AvailableSlotsData,
+  AvailableDateSlot,
+  AvailableTimeSlot,
 } from '@/types/api';
 
 /**
@@ -73,65 +75,18 @@ export async function createCustomerPrevisitReservation(
 }
 
 /**
- * 시간 슬롯 생성 유틸리티
- * previsit 정보를 기반으로 프론트엔드에서 시간 슬롯 생성
- * (available-slots API가 Customer API에 없으므로 프론트엔드에서 계산)
+ * 예약 가능 일정 조회
+ * GET /customer/previsit/{uuid}/available-slots
  */
-export function generateTimeSlots(previsit: CustomerPrevisitData): GeneratedDateSlot[] {
-  const dates: GeneratedDateSlot[] = [];
-
-  // 날짜 범위 생성
-  const dateBegin = new Date(previsit.date_begin);
-  const dateEnd = new Date(previsit.date_end);
-  const timeUnit = previsit.time_unit || 60;
-  const maxLimit = previsit.max_limit || 0;
-
-  // 시간 파싱 (HH:mm:ss 또는 HH:mm 형식)
-  const parseTime = (timeStr: string): { hours: number; minutes: number } => {
-    const parts = timeStr.split(':');
-    return {
-      hours: parseInt(parts[0], 10),
-      minutes: parseInt(parts[1], 10),
-    };
-  };
-
-  const timeFirst = parseTime(previsit.time_first);
-  const timeLast = parseTime(previsit.time_last);
-
-  // 날짜별 시간 슬롯 생성
-  const currentDate = new Date(dateBegin);
-  while (currentDate <= dateEnd) {
-    const dateStr = currentDate.toISOString().split('T')[0];
-    const times: GeneratedTimeSlot[] = [];
-
-    // 시간 슬롯 생성
-    let currentMinutes = timeFirst.hours * 60 + timeFirst.minutes;
-    const lastMinutes = timeLast.hours * 60 + timeLast.minutes;
-
-    while (currentMinutes <= lastMinutes) {
-      const hours = Math.floor(currentMinutes / 60);
-      const minutes = currentMinutes % 60;
-      const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-
-      times.push({
-        time: timeStr,
-        available: maxLimit, // 실제 예약 현황을 알 수 없으므로 max_limit 표시
-      });
-
-      currentMinutes += timeUnit;
-    }
-
-    dates.push({
-      date: dateStr,
-      times,
-    });
-
-    // 다음 날짜로
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  return dates;
+export async function getCustomerAvailableSlots(uuid: string): Promise<AvailableSlotsData> {
+  const response = await api.get<CustomerAvailableSlotsResponse>(
+    `/customer/previsit/${uuid}/available-slots`
+  );
+  return response.data;
 }
+
+// 타입 재export (하위 호환성)
+export type { AvailableDateSlot, AvailableTimeSlot };
 
 // ============================================================================
 // 레거시 API 함수 (하위 호환성 - 추후 제거 예정)
@@ -182,11 +137,10 @@ export async function getPrevisitDonghos(previsitId: number, dong: string): Prom
 }
 
 /**
- * @deprecated generateTimeSlots 사용
+ * @deprecated getCustomerAvailableSlots 사용
  */
-export async function getPrevisitAvailableSlots(_previsitId: number): Promise<GeneratedDateSlot[]> {
+export async function getPrevisitAvailableSlots(_previsitId: number): Promise<AvailableDateSlot[]> {
   // 레거시 API는 더 이상 지원되지 않음
-  // previsit 정보를 가져와서 시간 슬롯 생성
   return [];
 }
 

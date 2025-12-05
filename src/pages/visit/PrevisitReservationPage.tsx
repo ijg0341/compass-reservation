@@ -37,13 +37,13 @@ import {
   getCustomerDongs,
   getCustomerDonghos,
   createCustomerPrevisitReservation,
-  generateTimeSlots,
+  getCustomerAvailableSlots,
 } from '@/lib/api/previsitApi';
 import type {
   CustomerPrevisitData,
   CustomerDonghoData,
-  GeneratedDateSlot,
-  GeneratedTimeSlot,
+  AvailableDateSlot,
+  AvailableTimeSlot,
 } from '@/types/api';
 
 // 예약 안내 문구
@@ -79,11 +79,11 @@ export default function PrevisitReservationPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // API 데이터 상태
-  const [availableDates, setAvailableDates] = useState<GeneratedDateSlot[]>([]);
+  const [availableDates, setAvailableDates] = useState<AvailableDateSlot[]>([]);
   const [maxLimit, setMaxLimit] = useState<number>(0);
   const [buildings, setBuildings] = useState<string[]>([]);
   const [units, setUnits] = useState<CustomerDonghoData[]>([]);
-  const [timeSlots, setTimeSlots] = useState<GeneratedTimeSlot[]>([]);
+  const [timeSlots, setTimeSlots] = useState<AvailableTimeSlot[]>([]);
 
   // UI 상태
   const [selectedDateTab, setSelectedDateTab] = useState(0);
@@ -154,26 +154,26 @@ export default function PrevisitReservationPage() {
   // 사전방문 정보 로드 후 시간 슬롯 및 동 목록 조회
   useEffect(() => {
     async function fetchInitialData() {
-      if (!previsit) return;
+      if (!previsit || !uuid) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        // 1. 시간 슬롯 생성 (프론트엔드에서 계산)
-        const slots = generateTimeSlots(previsit);
+        // 1. 예약 가능 일정 조회 (API에서 실제 예약 현황 반영)
+        const slotsData = await getCustomerAvailableSlots(uuid);
 
         // 2. 동 목록 조회 (project_id 사용)
         const dongsData = await getCustomerDongs(previsit.project_id);
 
-        setAvailableDates(slots);
-        setMaxLimit(previsit.max_limit || 0);
+        setAvailableDates(slotsData.dates);
+        setMaxLimit(slotsData.max_limit);
         setBuildings(dongsData);
 
         // 첫 번째 날짜의 시간 슬롯 설정
-        if (slots.length > 0) {
-          setTimeSlots(slots[0].times);
-          setValue('dateId', slots[0].date);
+        if (slotsData.dates.length > 0) {
+          setTimeSlots(slotsData.dates[0].times);
+          setValue('dateId', slotsData.dates[0].date);
         }
       } catch (err) {
         console.error('초기 데이터 로드 실패:', err);
@@ -184,7 +184,7 @@ export default function PrevisitReservationPage() {
     }
 
     fetchInitialData();
-  }, [previsit, setValue]);
+  }, [previsit, uuid, setValue]);
 
   // 동 선택 시 호 목록 조회
   useEffect(() => {
