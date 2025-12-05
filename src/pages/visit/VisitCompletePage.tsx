@@ -1,5 +1,5 @@
-import { Box, Typography, Button } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Box, Typography } from '@mui/material';
+import { useLocation } from 'react-router-dom';
 import { CheckCircle } from '@mui/icons-material';
 
 interface ReservationData {
@@ -12,7 +12,6 @@ interface ReservationData {
 }
 
 export default function VisitCompletePage() {
-  const navigate = useNavigate();
   const location = useLocation();
   const reservationData = location.state as ReservationData | null;
 
@@ -80,15 +79,6 @@ export default function VisitCompletePage() {
               <strong>예약 시간:</strong> {reservationData?.time || '-'}
             </Typography>
           </Box>
-
-          <Button
-            variant="contained"
-            size="large"
-            fullWidth
-            onClick={() => navigate('/')}
-          >
-            확인
-          </Button>
         </Box>
       </Box>
     </Box>
