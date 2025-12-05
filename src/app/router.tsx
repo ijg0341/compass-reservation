@@ -11,6 +11,9 @@ const VisitInfoPage = lazy(() => import('../pages/visit/VisitInfoPage'));
 const AppDownloadPage = lazy(() => import('../pages/visit/AppDownloadPage'));
 const VisitReservationPage = lazy(() => import('../pages/visit/VisitReservationPage'));
 const VisitCompletePage = lazy(() => import('../pages/visit/VisitCompletePage'));
+// 사전방문 (UUID 기반)
+const PrevisitInfoPage = lazy(() => import('../pages/visit/PrevisitInfoPage'));
+const PrevisitAppDownloadPage = lazy(() => import('../pages/visit/PrevisitAppDownloadPage'));
 const PrevisitReservationPage = lazy(() => import('../pages/visit/PrevisitReservationPage'));
 const MoveLoginPage = lazy(() => import('../pages/move/MoveLoginPage'));
 const MoveCalendarPage = lazy(() => import('../pages/move/MoveCalendarPage'));
@@ -69,6 +72,22 @@ const router = createBrowserRouter([
   // 사전방문 예약 (UUID 기반 URL)
   {
     path: '/visit/:uuid',
+    element: (
+      <Suspense fallback={<LoadingFallback />}>
+        <PrevisitInfoPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/visit/:uuid/app-download',
+    element: (
+      <Suspense fallback={<LoadingFallback />}>
+        <PrevisitAppDownloadPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/visit/:uuid/reservation',
     element: (
       <Suspense fallback={<LoadingFallback />}>
         <PrevisitReservationPage />

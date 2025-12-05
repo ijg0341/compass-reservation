@@ -1,5 +1,5 @@
 /**
- * 사전방문 예약 페이지 (/visit/:uuid)
+ * 사전방문 예약 페이지 (/visit/:uuid/reservation)
  * UUID 기반 접근 (보안을 위해 추측 불가능한 UUID 사용)
  */
 import { useState, useEffect, useCallback } from 'react';
@@ -246,8 +246,8 @@ export default function PrevisitReservationPage() {
     const selectedUnit = units.find((u) => String(u.id) === data.unitId);
 
     try {
-      // 사전방문 예약 API 호출 (project_id, uuid 사용)
-      await createCustomerPrevisitReservation(previsit.project_id, uuid, {
+      // 사전방문 예약 API 호출 (UUID 기반)
+      await createCustomerPrevisitReservation(uuid, {
         dongho_id: Number(data.unitId),
         reservation_date: data.dateId,
         reservation_time: data.timeSlotId,

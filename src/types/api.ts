@@ -104,7 +104,7 @@ export type CreateVisitScheduleResponse = ApiResponse<VisitScheduleData>;
 
 /**
  * 사전방문 행사 정보
- * GET /customer/project/{projectId}/previsit/{uuid}
+ * GET /customer/previsit/{uuid}
  */
 export interface CustomerPrevisitData {
   id: number;
@@ -118,6 +118,7 @@ export interface CustomerPrevisitData {
   time_last: string;
   time_unit: number;
   image_file_id: number | null;
+  image_file_url: string | null;
 }
 
 export type CustomerPrevisitResponse = ApiResponse<CustomerPrevisitData>;
@@ -155,7 +156,7 @@ export type CustomerDonghosResponse = ApiResponse<CustomerDonghoListData>;
 
 /**
  * 사전방문 예약 등록
- * POST /customer/project/{projectId}/previsit/{uuid}/reservations
+ * POST /customer/previsit/{uuid}/reservations
  */
 export interface CustomerPrevisitReservationRequest {
   dongho_id: number;

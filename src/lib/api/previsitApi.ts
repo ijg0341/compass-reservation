@@ -1,7 +1,7 @@
 /**
  * 사전방문 Customer API 서비스
  * API 스펙: 2025-12-05 (UUID 기반)
- * Base URL: /customer/project/{projectId}/previsit/{uuid}
+ * Base URL: /customer/previsit/{uuid}
  */
 import { api } from './client';
 import type {
@@ -19,14 +19,13 @@ import type {
 
 /**
  * 사전방문 행사 정보 조회 (UUID로 조회)
- * GET /customer/project/{projectId}/previsit/{uuid}
+ * GET /customer/previsit/{uuid}
  *
  * @param uuid 사전방문 행사 UUID
- * @param projectId 프로젝트 ID (optional, 백엔드에서 검증하지 않음)
  */
-export async function getCustomerPrevisit(uuid: string, projectId: number = 0): Promise<CustomerPrevisitData> {
+export async function getCustomerPrevisit(uuid: string): Promise<CustomerPrevisitData> {
   const response = await api.get<CustomerPrevisitResponse>(
-    `/customer/project/${projectId}/previsit/${uuid}`
+    `/customer/previsit/${uuid}`
   );
   return response.data;
 }
@@ -60,15 +59,14 @@ export async function getCustomerDonghos(projectId: number, dong?: string): Prom
 
 /**
  * 사전방문 예약 등록
- * POST /customer/project/{projectId}/previsit/{uuid}/reservations
+ * POST /customer/previsit/{uuid}/reservations
  */
 export async function createCustomerPrevisitReservation(
-  projectId: number,
   uuid: string,
   data: CustomerPrevisitReservationRequest
 ): Promise<CustomerPrevisitReservationResultData> {
   const response = await api.post<CustomerPrevisitReservationResponse>(
-    `/customer/project/${projectId}/previsit/${uuid}/reservations`,
+    `/customer/previsit/${uuid}/reservations`,
     data
   );
   return response.data;
