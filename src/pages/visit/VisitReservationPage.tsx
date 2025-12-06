@@ -31,6 +31,21 @@ import { Warning as WarningIcon } from '@mui/icons-material';
 import { getAvailableSlots, getDongs, getDongHos, createVisitSchedule } from '@/lib/api/reservationApi';
 import type { AvailableDateData, DongData, DongHoData, TimeSlotData } from '@/types/api';
 
+// 숫자 추출 함수 (문자열에서 숫자만 추출하여 정렬에 사용)
+const extractNumber = (str: string): number => {
+  const match = str.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+};
+
+// 숫자 기준 정렬 함수
+const sortByNumber = <T extends { name?: string; number?: string }>(items: T[]): T[] => {
+  return [...items].sort((a, b) => {
+    const numA = a.number ? extractNumber(a.number) : extractNumber(a.name || '');
+    const numB = b.number ? extractNumber(b.number) : extractNumber(b.name || '');
+    return numA - numB;
+  });
+};
+
 // 하드코딩된 ID (추후 URL 파라미터 등으로 변경)
 const PROJECT_ID = 1;
 
@@ -118,7 +133,7 @@ export default function VisitReservationPage() {
 
         setAvailableDates(slotsData.dates);
         setMaxLimit(slotsData.max_limit);
-        setBuildings(dongsData);
+        setBuildings(sortByNumber(dongsData));
 
         // 첫 번째 날짜의 시간 슬롯 설정
         if (slotsData.dates.length > 0) {
@@ -147,7 +162,7 @@ export default function VisitReservationPage() {
       setIsUnitsLoading(true);
       try {
         const unitsData = await getDongHos(Number(visitInfoId), Number(selectedBuildingId));
-        setUnits(unitsData);
+        setUnits(sortByNumber(unitsData));
         setValue('unitId', '');
       } catch (err) {
         console.error('호 목록 조회 실패:', err);
