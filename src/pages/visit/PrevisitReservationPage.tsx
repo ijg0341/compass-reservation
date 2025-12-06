@@ -46,6 +46,22 @@ import type {
   AvailableTimeSlot,
 } from '@/types/api';
 
+// 숫자 추출 함수 (문자열에서 숫자만 추출: "1001호" -> 1001)
+const extractNumber = (str: string): number => {
+  const match = str.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 0;
+};
+
+// 동 목록 정렬 ("102동" -> 102 기준 오름차순)
+const sortDongs = (items: string[]): string[] => {
+  return [...items].sort((a, b) => extractNumber(a) - extractNumber(b));
+};
+
+// 호 목록 정렬 ("1001호" -> 1001 기준 오름차순)
+const sortUnits = (items: CustomerDonghoData[]): CustomerDonghoData[] => {
+  return [...items].sort((a, b) => extractNumber(a.ho) - extractNumber(b.ho));
+};
+
 // 예약 안내 문구
 const reservationNotices = [
   '예약 중복은 불가능합니다.',
@@ -168,7 +184,7 @@ export default function PrevisitReservationPage() {
 
         setAvailableDates(slotsData.dates);
         setMaxLimit(slotsData.max_limit);
-        setBuildings(dongsData);
+        setBuildings(sortDongs(dongsData));
 
         // 첫 번째 날짜의 시간 슬롯 설정
         if (slotsData.dates.length > 0) {
@@ -197,7 +213,7 @@ export default function PrevisitReservationPage() {
       setIsUnitsLoading(true);
       try {
         const unitsData = await getCustomerDonghos(previsit.project_id, selectedBuilding);
-        setUnits(unitsData);
+        setUnits(sortUnits(unitsData));
         setValue('unitId', '');
       } catch (err) {
         console.error('호 목록 조회 실패:', err);

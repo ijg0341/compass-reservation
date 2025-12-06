@@ -37,13 +37,14 @@ const extractNumber = (str: string): number => {
   return match ? parseInt(match[0], 10) : 0;
 };
 
-// 숫자 기준 정렬 함수
-const sortByNumber = <T extends { name?: string; number?: string }>(items: T[]): T[] => {
-  return [...items].sort((a, b) => {
-    const numA = a.number ? extractNumber(a.number) : extractNumber(a.name || '');
-    const numB = b.number ? extractNumber(b.number) : extractNumber(b.name || '');
-    return numA - numB;
-  });
+// 동 목록 정렬 (dong 필드에서 숫자 추출: "102동" -> 102)
+const sortDongs = (items: DongData[]): DongData[] => {
+  return [...items].sort((a, b) => extractNumber(a.name || (a as any).dong || '') - extractNumber(b.name || (b as any).dong || ''));
+};
+
+// 호 목록 정렬 (ho 필드에서 숫자 추출: "1001호" -> 1001)
+const sortUnits = (items: DongHoData[]): DongHoData[] => {
+  return [...items].sort((a, b) => extractNumber(a.name || (a as any).ho || '') - extractNumber(b.name || (b as any).ho || ''));
 };
 
 // 하드코딩된 ID (추후 URL 파라미터 등으로 변경)
@@ -133,7 +134,7 @@ export default function VisitReservationPage() {
 
         setAvailableDates(slotsData.dates);
         setMaxLimit(slotsData.max_limit);
-        setBuildings(sortByNumber(dongsData));
+        setBuildings(sortDongs(dongsData));
 
         // 첫 번째 날짜의 시간 슬롯 설정
         if (slotsData.dates.length > 0) {
@@ -162,7 +163,7 @@ export default function VisitReservationPage() {
       setIsUnitsLoading(true);
       try {
         const unitsData = await getDongHos(Number(visitInfoId), Number(selectedBuildingId));
-        setUnits(sortByNumber(unitsData));
+        setUnits(sortUnits(unitsData));
         setValue('unitId', '');
       } catch (err) {
         console.error('호 목록 조회 실패:', err);
