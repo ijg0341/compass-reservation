@@ -9,7 +9,6 @@ const MoveLayout = lazy(() => import('../components/layout/MoveLayout'));
 const HomePage = lazy(() => import('../pages/HomePage'));
 const VisitInfoPage = lazy(() => import('../pages/visit/VisitInfoPage'));
 const AppDownloadPage = lazy(() => import('../pages/visit/AppDownloadPage'));
-const VisitReservationPage = lazy(() => import('../pages/visit/VisitReservationPage'));
 const VisitCompletePage = lazy(() => import('../pages/visit/VisitCompletePage'));
 // 사전방문 (UUID 기반)
 const PrevisitInfoPage = lazy(() => import('../pages/visit/PrevisitInfoPage'));
@@ -50,14 +49,6 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<LoadingFallback />}>
         <AppDownloadPage />
-      </Suspense>
-    ),
-  },
-  {
-    path: '/visit/reservation',
-    element: (
-      <Suspense fallback={<LoadingFallback />}>
-        <VisitReservationPage />
       </Suspense>
     ),
   },

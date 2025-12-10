@@ -401,11 +401,13 @@ export default function PrevisitReservationPage() {
         <Box sx={{ py: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ px: 2 }}>
             <Typography variant="h6" fontWeight={700}>
-              방문예약 신청
+              방문예약신청
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {previsit?.name || '사전방문'}
-            </Typography>
+            {previsit?.name && (
+              <Typography variant="body2" color="text.secondary">
+                {previsit.name}
+              </Typography>
+            )}
           </Box>
         </Box>
 
@@ -422,90 +424,7 @@ export default function PrevisitReservationPage() {
           </Alert>
 
           <form onSubmit={handleSubmit(onSubmit)}>
-            <Box sx={{ mb: 4 }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                신청자 정보
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-
-              <Controller
-                name="name"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="신청자 이름"
-                    placeholder="홍길동"
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
-                    sx={{ mb: 2 }}
-                  />
-                )}
-              />
-
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                연락처
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="flex-start">
-                <Controller
-                  name="phone1"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      placeholder="010"
-                      error={!!errors.phone1}
-                      inputProps={{ maxLength: 3 }}
-                      sx={{ width: '80px' }}
-                    />
-                  )}
-                />
-                <Typography variant="h6" sx={{ lineHeight: '40px' }}>
-                  -
-                </Typography>
-                <Controller
-                  name="phone2"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      placeholder="0000"
-                      error={!!errors.phone2}
-                      inputProps={{ maxLength: 4 }}
-                      sx={{ width: '100px' }}
-                    />
-                  )}
-                />
-                <Typography variant="h6" sx={{ lineHeight: '40px' }}>
-                  -
-                </Typography>
-                <Controller
-                  name="phone3"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      placeholder="0000"
-                      error={!!errors.phone3}
-                      inputProps={{ maxLength: 4 }}
-                      sx={{ width: '100px' }}
-                    />
-                  )}
-                />
-              </Stack>
-              {(errors.phone1 || errors.phone2 || errors.phone3) && (
-                <FormHelperText error sx={{ mt: 1 }}>
-                  {errors.phone1?.message ||
-                    errors.phone2?.message ||
-                    errors.phone3?.message}
-                </FormHelperText>
-              )}
-            </Box>
-
+            {/* 세대 정보 */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
                 세대 정보
@@ -563,9 +482,10 @@ export default function PrevisitReservationPage() {
               </Stack>
             </Box>
 
+            {/* 방문예약 일시 */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                예약 일시
+                방문예약 일시
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
@@ -676,6 +596,95 @@ export default function PrevisitReservationPage() {
                 </>
               ) : (
                 <Alert severity="info">예약 가능한 일정이 없습니다.</Alert>
+              )}
+            </Box>
+
+            {/* 신청자 정보 */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                신청자 정보
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="신청자 이름"
+                    placeholder="홍길동"
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                  />
+                )}
+              />
+            </Box>
+
+            {/* 연락처 */}
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                연락처
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Controller
+                  name="phone1"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      placeholder="010"
+                      error={!!errors.phone1}
+                      inputProps={{ maxLength: 3 }}
+                      sx={{ width: '80px' }}
+                    />
+                  )}
+                />
+                <Typography variant="h6" sx={{ lineHeight: '40px' }}>
+                  -
+                </Typography>
+                <Controller
+                  name="phone2"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      placeholder="0000"
+                      error={!!errors.phone2}
+                      inputProps={{ maxLength: 4 }}
+                      sx={{ width: '100px' }}
+                    />
+                  )}
+                />
+                <Typography variant="h6" sx={{ lineHeight: '40px' }}>
+                  -
+                </Typography>
+                <Controller
+                  name="phone3"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      placeholder="0000"
+                      error={!!errors.phone3}
+                      inputProps={{ maxLength: 4 }}
+                      sx={{ width: '100px' }}
+                    />
+                  )}
+                />
+              </Stack>
+              {(errors.phone1 || errors.phone2 || errors.phone3) && (
+                <FormHelperText error sx={{ mt: 1 }}>
+                  {errors.phone1?.message ||
+                    errors.phone2?.message ||
+                    errors.phone3?.message}
+                </FormHelperText>
               )}
             </Box>
 
