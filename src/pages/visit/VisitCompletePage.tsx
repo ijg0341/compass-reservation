@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import { CheckCircle } from '@mui/icons-material';
 
 interface ReservationData {
-  previsitName?: string;
   name: string;
   phone: string;
   building: string;
@@ -29,17 +28,15 @@ export default function VisitCompletePage() {
           bgcolor: '#FFFFFF',
         }}
       >
-        {/* 헤더 */}
+        {/* 헤더 - 아파트 로고 */}
         <Box sx={{ py: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ px: 2 }}>
             <Typography variant="h6" fontWeight={700}>
               예약 완료
             </Typography>
-            {reservationData?.previsitName && (
-              <Typography variant="body2" color="text.secondary">
-                {reservationData.previsitName}
-              </Typography>
-            )}
+            <Typography variant="body2" color="text.secondary">
+              창원동읍 한양 립스 더퍼스트
+            </Typography>
           </Box>
         </Box>
 
@@ -66,20 +63,20 @@ export default function VisitCompletePage() {
             }}
           >
             <Typography variant="body2" sx={{ mb: 1 }}>
+              <strong>신청자:</strong> {reservationData?.name || '-'}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
+              <strong>연락처:</strong> {reservationData?.phone || '-'}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 1 }}>
               <strong>세대:</strong> {reservationData?.building || '-'}{' '}
               {reservationData?.unit || '-'}
             </Typography>
             <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>예약일자:</strong> {reservationData?.date || '-'}
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>예약시간:</strong> {reservationData?.time || '-'}
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>신청자명:</strong> {reservationData?.name || '-'}
+              <strong>예약 날짜:</strong> {reservationData?.date || '-'}
             </Typography>
             <Typography variant="body2">
-              <strong>연락처:</strong> {reservationData?.phone || '-'}
+              <strong>예약 시간:</strong> {reservationData?.time || '-'}
             </Typography>
           </Box>
         </Box>

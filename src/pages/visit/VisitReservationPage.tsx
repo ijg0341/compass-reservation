@@ -1,10 +1,6 @@
-/**
- * 사전방문 예약 페이지 (/visit/:uuid/reservation)
- * UUID 기반 접근 (보안을 위해 추측 불가능한 UUID 사용)
- */
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -32,35 +28,27 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Warning as WarningIcon } from '@mui/icons-material';
-import {
-  getCustomerPrevisit,
-  getCustomerDongs,
-  getCustomerDonghos,
-  createCustomerPrevisitReservation,
-  getCustomerAvailableSlots,
-} from '@/lib/api/previsitApi';
-import type {
-  CustomerPrevisitData,
-  CustomerDonghoData,
-  AvailableDateSlot,
-  AvailableTimeSlot,
-} from '@/types/api';
+import { getAvailableSlots, getDongs, getDongHos, createVisitSchedule } from '@/lib/api/reservationApi';
+import type { AvailableDateData, DongData, DongHoData, TimeSlotData } from '@/types/api';
 
-// 숫자 추출 함수 (문자열에서 숫자만 추출: "1001호" -> 1001)
+// 숫자 추출 함수 (문자열에서 숫자만 추출하여 정렬에 사용)
 const extractNumber = (str: string): number => {
   const match = str.match(/\d+/);
   return match ? parseInt(match[0], 10) : 0;
 };
 
-// 동 목록 정렬 ("102동" -> 102 기준 오름차순)
-const sortDongs = (items: string[]): string[] => {
-  return [...items].sort((a, b) => extractNumber(a) - extractNumber(b));
+// 동 목록 정렬 (dong 필드에서 숫자 추출: "102동" -> 102)
+const sortDongs = (items: DongData[]): DongData[] => {
+  return [...items].sort((a, b) => extractNumber(a.name || (a as any).dong || '') - extractNumber(b.name || (b as any).dong || ''));
 };
 
-// 호 목록 정렬 ("1001호" -> 1001 기준 오름차순)
-const sortUnits = (items: CustomerDonghoData[]): CustomerDonghoData[] => {
-  return [...items].sort((a, b) => extractNumber(a.ho) - extractNumber(b.ho));
+// 호 목록 정렬 (ho 필드에서 숫자 추출: "1001호" -> 1001)
+const sortUnits = (items: DongHoData[]): DongHoData[] => {
+  return [...items].sort((a, b) => extractNumber(a.name || (a as any).ho || '') - extractNumber(b.name || (b as any).ho || ''));
 };
+
+// 하드코딩된 ID (추후 URL 파라미터 등으로 변경)
+const PROJECT_ID = 1;
 
 // 예약 안내 문구
 const reservationNotices = [
@@ -77,7 +65,7 @@ const reservationSchema = z.object({
   phone1: z.string().regex(/^010$/, '010을 입력해주세요.'),
   phone2: z.string().regex(/^\d{4}$/, '4자리 숫자를 입력해주세요.'),
   phone3: z.string().regex(/^\d{4}$/, '4자리 숫자를 입력해주세요.'),
-  building: z.string().min(1, '동을 선택해주세요.'),
+  buildingId: z.string().min(1, '동을 선택해주세요.'),
   unitId: z.string().min(1, '호수를 선택해주세요.'),
   dateId: z.string().min(1, '날짜를 선택해주세요.'),
   timeSlotId: z.string().min(1, '시간대를 선택해주세요.'),
@@ -85,25 +73,19 @@ const reservationSchema = z.object({
 
 type ReservationFormData = z.infer<typeof reservationSchema>;
 
-export default function PrevisitReservationPage() {
+export default function VisitReservationPage() {
   const navigate = useNavigate();
-  const { uuid } = useParams<{ uuid: string }>();
-
-  // 사전방문 정보 상태
-  const [previsit, setPrevisit] = useState<CustomerPrevisitData | null>(null);
-  const [isValidating, setIsValidating] = useState(true);
-  const [validationError, setValidationError] = useState<string | null>(null);
 
   // API 데이터 상태
-  const [availableDates, setAvailableDates] = useState<AvailableDateSlot[]>([]);
+  const [availableDates, setAvailableDates] = useState<AvailableDateData[]>([]);
   const [maxLimit, setMaxLimit] = useState<number>(0);
-  const [buildings, setBuildings] = useState<string[]>([]);
-  const [units, setUnits] = useState<CustomerDonghoData[]>([]);
-  const [timeSlots, setTimeSlots] = useState<AvailableTimeSlot[]>([]);
+  const [buildings, setBuildings] = useState<DongData[]>([]);
+  const [units, setUnits] = useState<DongHoData[]>([]);
+  const [timeSlots, setTimeSlots] = useState<TimeSlotData[]>([]);
 
   // UI 상태
   const [selectedDateTab, setSelectedDateTab] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isUnitsLoading, setIsUnitsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -120,67 +102,35 @@ export default function PrevisitReservationPage() {
       phone1: '010',
       phone2: '',
       phone3: '',
-      building: '',
+      buildingId: '',
       unitId: '',
       dateId: '',
       timeSlotId: '',
     },
   });
 
-  const selectedBuilding = watch('building');
+  const selectedBuildingId = watch('buildingId');
   const selectedTimeSlotId = watch('timeSlotId');
 
-  // UUID로 사전방문 정보 로드
-  useEffect(() => {
-    async function loadPrevisit() {
-      if (!uuid) {
-        setValidationError('잘못된 접근입니다.');
-        setIsValidating(false);
-        return;
-      }
+  // 방문 정보 ID 상태 (available-slots 응답에서 추출)
+  const [visitInfoId, setVisitInfoId] = useState<string | null>(null);
 
-      try {
-        // UUID로 사전방문 정보 조회
-        const previsitData = await getCustomerPrevisit(uuid);
-
-        // 날짜 유효성 검사
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const endDate = new Date(previsitData.date_end);
-        endDate.setHours(23, 59, 59, 999);
-
-        if (today > endDate) {
-          setValidationError('예약 기간이 종료되었습니다.');
-          setIsValidating(false);
-          return;
-        }
-
-        setPrevisit(previsitData);
-        setIsValidating(false);
-      } catch (err) {
-        console.error('사전방문 정보 조회 실패:', err);
-        setValidationError('사전방문 정보를 찾을 수 없습니다.');
-        setIsValidating(false);
-      }
-    }
-
-    loadPrevisit();
-  }, [uuid]);
-
-  // 사전방문 정보 로드 후 시간 슬롯 및 동 목록 조회
+  // 초기 데이터 로드 (예약 가능 일정 → visit_info_id 추출 → 동 목록)
   useEffect(() => {
     async function fetchInitialData() {
-      if (!previsit || !uuid) return;
-
       setIsLoading(true);
       setError(null);
 
       try {
-        // 1. 예약 가능 일정 조회 (API에서 실제 예약 현황 반영)
-        const slotsData = await getCustomerAvailableSlots(uuid);
+        // 1. 예약 가능 일정 조회 (응답에서 visit_info_id 포함)
+        const slotsData = await getAvailableSlots(PROJECT_ID);
 
-        // 2. 동 목록 조회 (project_id 사용)
-        const dongsData = await getCustomerDongs(previsit.project_id);
+        // 2. 응답에서 visit_info_id 추출
+        const fetchedVisitInfoId = slotsData.visit_info_id;
+        setVisitInfoId(fetchedVisitInfoId);
+
+        // 3. visit_info_id로 동 목록 조회
+        const dongsData = await getDongs(Number(fetchedVisitInfoId));
 
         setAvailableDates(slotsData.dates);
         setMaxLimit(slotsData.max_limit);
@@ -200,19 +150,19 @@ export default function PrevisitReservationPage() {
     }
 
     fetchInitialData();
-  }, [previsit, uuid, setValue]);
+  }, [setValue]);
 
   // 동 선택 시 호 목록 조회
   useEffect(() => {
     async function fetchUnits() {
-      if (!selectedBuilding || !previsit) {
+      if (!selectedBuildingId || !visitInfoId) {
         setUnits([]);
         return;
       }
 
       setIsUnitsLoading(true);
       try {
-        const unitsData = await getCustomerDonghos(previsit.project_id, selectedBuilding);
+        const unitsData = await getDongHos(Number(visitInfoId), Number(selectedBuildingId));
         setUnits(sortUnits(unitsData));
         setValue('unitId', '');
       } catch (err) {
@@ -224,7 +174,7 @@ export default function PrevisitReservationPage() {
     }
 
     fetchUnits();
-  }, [selectedBuilding, previsit, setValue]);
+  }, [selectedBuildingId, visitInfoId, setValue]);
 
   // 날짜 탭 변경 시 시간 슬롯 업데이트
   const handleDateTabChange = useCallback(
@@ -251,25 +201,26 @@ export default function PrevisitReservationPage() {
   };
 
   const onSubmit = async (data: ReservationFormData) => {
-    if (!previsit || !uuid) {
-      setError('사전방문 정보를 찾을 수 없습니다.');
+    if (!visitInfoId) {
+      setError('방문 정보를 찾을 수 없습니다.');
       return;
     }
 
     const phoneNumber = `${data.phone1}-${data.phone2}-${data.phone3}`;
     const selectedDate = availableDates.find((d) => d.date === data.dateId);
     const selectedTime = timeSlots.find((t) => t.time === data.timeSlotId);
-    const selectedUnit = units.find((u) => String(u.id) === data.unitId);
+    const selectedBuilding = buildings.find((b) => b.id === data.buildingId);
+    const selectedUnit = units.find((u) => u.id === data.unitId);
 
     try {
-      // 사전방문 예약 API 호출 (UUID 기반)
-      await createCustomerPrevisitReservation(uuid, {
-        dongho_id: Number(data.unitId),
-        reservation_date: data.dateId,
-        reservation_time: data.timeSlotId,
-        writer_name: data.name,
-        writer_phone: phoneNumber,
-        memo: '',
+      // API 호출
+      await createVisitSchedule({
+        visit_info_id: Number(visitInfoId),
+        visit_date: data.dateId,
+        visit_time: data.timeSlotId,
+        dong_ho_id: Number(data.unitId),
+        resident_name: data.name,
+        resident_phone: phoneNumber,
       });
 
       // 예약완료 페이지로 이동
@@ -277,11 +228,10 @@ export default function PrevisitReservationPage() {
         state: {
           name: data.name,
           phone: phoneNumber,
-          building: data.building,
-          unit: selectedUnit?.ho || '',
+          building: selectedBuilding?.name || '',
+          unit: selectedUnit?.name?.trim() || `${selectedUnit?.number}호`,
           date: selectedDate ? formatDate(selectedDate.date) : '',
           time: selectedTime?.time?.substring(0, 5) || data.timeSlotId,
-          previsitName: previsit.name,
         },
       });
     } catch (err) {
@@ -289,55 +239,6 @@ export default function PrevisitReservationPage() {
       setError('예약에 실패했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
-
-  // 검증 중 상태
-  if (isValidating) {
-    return (
-      <Box sx={{ bgcolor: '#F5F5F5', minHeight: '100vh' }}>
-        <Box
-          sx={{
-            maxWidth: 480,
-            mx: 'auto',
-            minHeight: '100vh',
-            bgcolor: '#FFFFFF',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      </Box>
-    );
-  }
-
-  // 검증 실패 상태
-  if (validationError) {
-    return (
-      <Box sx={{ bgcolor: '#F5F5F5', minHeight: '100vh' }}>
-        <Box
-          sx={{
-            maxWidth: 480,
-            mx: 'auto',
-            minHeight: '100vh',
-            bgcolor: '#FFFFFF',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            p: 3,
-          }}
-        >
-          <Alert severity="error" sx={{ mb: 3, width: '100%' }}>
-            {validationError}
-          </Alert>
-          <Button variant="contained" onClick={() => navigate('/')}>
-            홈으로 돌아가기
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
 
   // 로딩 상태
   if (isLoading) {
@@ -397,14 +298,14 @@ export default function PrevisitReservationPage() {
           bgcolor: '#FFFFFF',
         }}
       >
-        {/* 헤더 - 사전방문 행사명 표시 */}
+        {/* 헤더 - 아파트 로고 */}
         <Box sx={{ py: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Box sx={{ px: 2 }}>
             <Typography variant="h6" fontWeight={700}>
               방문예약 신청
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {previsit?.name || '사전방문'}
+              창원동읍 한양 립스 더퍼스트
             </Typography>
           </Box>
         </Box>
@@ -514,20 +415,20 @@ export default function PrevisitReservationPage() {
 
               <Stack direction="row" spacing={2}>
                 <Controller
-                  name="building"
+                  name="buildingId"
                   control={control}
                   render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.building}>
+                    <FormControl fullWidth error={!!errors.buildingId}>
                       <InputLabel>동 선택</InputLabel>
                       <Select {...field} label="동 선택">
-                        {buildings.map((dong) => (
-                          <MenuItem key={dong} value={dong}>
-                            {dong}
+                        {buildings.map((building) => (
+                          <MenuItem key={building.id} value={String(building.id)}>
+                            {building.name}
                           </MenuItem>
                         ))}
                       </Select>
-                      {errors.building && (
-                        <FormHelperText>{errors.building.message}</FormHelperText>
+                      {errors.buildingId && (
+                        <FormHelperText>{errors.buildingId.message}</FormHelperText>
                       )}
                     </FormControl>
                   )}
@@ -540,7 +441,7 @@ export default function PrevisitReservationPage() {
                     <FormControl
                       fullWidth
                       error={!!errors.unitId}
-                      disabled={!selectedBuilding || isUnitsLoading}
+                      disabled={!selectedBuildingId || isUnitsLoading}
                     >
                       <InputLabel>호 선택</InputLabel>
                       <Select {...field} label="호 선택">
@@ -549,7 +450,7 @@ export default function PrevisitReservationPage() {
                         ) : (
                           units.map((unit) => (
                             <MenuItem key={unit.id} value={String(unit.id)}>
-                              {unit.ho}
+                              {unit.name?.trim() || `${unit.number}호`}
                             </MenuItem>
                           ))
                         )}
@@ -604,7 +505,7 @@ export default function PrevisitReservationPage() {
                                   선택
                                 </TableCell>
                                 <TableCell align="center">시간</TableCell>
-                                <TableCell align="center">예약 가능</TableCell>
+                                <TableCell align="center">예약 현황</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -657,7 +558,7 @@ export default function PrevisitReservationPage() {
                                       }
                                       fontWeight="bold"
                                     >
-                                      {maxLimit > 0 ? `${slot.available}/${maxLimit}` : '가능'}
+                                      {slot.available}/{maxLimit}
                                     </Typography>
                                   </TableCell>
                                 </TableRow>
