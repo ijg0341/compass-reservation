@@ -286,3 +286,140 @@ export interface PrevisitReservationResultData {
 }
 
 export type CreatePrevisitReservationResponse = ApiResponse<PrevisitReservationResultData>;
+
+// ============================================================================
+// Customer API - 이사예약 (2025-12-28 UUID 기반 스펙)
+// Base URL: /customer/move/{uuid}
+// ============================================================================
+
+/**
+ * 이사예약 정보
+ * GET /customer/move/{uuid}
+ */
+export interface CustomerMoveInfoData {
+  id: number;
+  uuid?: string;
+  project_id?: number;
+  project_uuid: string;
+  date_begin: string;
+  date_end: string;
+  time_first: string;
+  time_last: string;
+  time_unit: number;
+  status?: string;
+}
+
+export type CustomerMoveInfoResponse = ApiResponse<CustomerMoveInfoData>;
+
+/**
+ * 이사예약 로그인 요청
+ * POST /customer/move/{uuid}/login
+ */
+export interface CustomerMoveLoginRequest {
+  dongho_id: number;
+  user_id: string;
+  password: string;
+}
+
+/**
+ * 이사예약 로그인 응답 데이터
+ */
+export interface CustomerMoveLoginData {
+  dongho_id: number;
+  dong: string;
+  ho: string;
+  contractor_name: string;
+  contractor_phone: string;
+  unit_type: string | null;
+}
+
+export type CustomerMoveLoginResponse = ApiResponse<CustomerMoveLoginData>;
+
+/**
+ * 이사예약 가능 시간대
+ * GET /customer/move/{uuid}/available-slots
+ */
+export interface MoveAvailableTimeSlot {
+  time: string;
+  available_lines: string[];
+  is_available: boolean;
+}
+
+export interface MoveAvailableDateSlot {
+  date: string;
+  times: MoveAvailableTimeSlot[];
+}
+
+export interface CustomerMoveAvailableSlotsData {
+  move_id: number;
+  date_begin: string;
+  date_end: string;
+  time_first: string;
+  time_last: string;
+  time_unit: number;
+  dates: MoveAvailableDateSlot[];
+}
+
+export type CustomerMoveAvailableSlotsResponse = ApiResponse<CustomerMoveAvailableSlotsData>;
+
+/**
+ * 이사예약 등록 요청
+ * POST /customer/move/{uuid}/reservations
+ */
+export interface CustomerMoveReservationRequest {
+  reservation_evline: string;
+  reservation_date: string;
+  reservation_time: string;
+}
+
+/**
+ * 이사예약 데이터 (active_reservation 또는 history 항목)
+ */
+export interface CustomerMoveReservationItem {
+  id: number;
+  reservation_evline: string;
+  reservation_date: string;
+  reservation_time: string;
+  created_at: string;
+  canceled_at: string | null;
+  canceled_reason: string | null;
+  is_canceled: boolean;
+}
+
+/**
+ * 이사예약 생성 응답
+ * POST /customer/move/{uuid}/reservations
+ */
+export interface CustomerMoveReservationCreateData {
+  id: number;
+}
+
+export type CustomerMoveReservationResponse = ApiResponse<CustomerMoveReservationCreateData>;
+
+/**
+ * 내 이사예약 조회 응답
+ * GET /customer/move/{uuid}/my-reservation
+ */
+export interface CustomerMoveMyReservationData {
+  dong: string;
+  ho: string;
+  active_reservation: CustomerMoveReservationItem | null;
+  history: CustomerMoveReservationItem[];
+}
+
+export type CustomerMoveMyReservationResponse = ApiResponse<CustomerMoveMyReservationData>;
+
+/**
+ * 이사예약 취소 요청
+ * DELETE /customer/move/{uuid}/reservations/{id}
+ */
+export interface CustomerMoveCancelRequest {
+  reason?: string;
+}
+
+export interface CustomerMoveCancelData {
+  id: number;
+  cancelled_at: string;
+}
+
+export type CustomerMoveCancelResponse = ApiResponse<CustomerMoveCancelData>;

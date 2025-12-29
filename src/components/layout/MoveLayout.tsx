@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -19,16 +19,33 @@ import {
   mobileHeaderStyles,
   mobileContentStyles,
 } from '@/styles/mobileStyles';
+import { useAuthStore } from '@/stores/authStore';
+import { moveApi } from '@/lib/api';
 
 export default function MoveLayout() {
+  const { uuid } = useParams<{ uuid: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    if (uuid) {
+      try {
+        await moveApi.logout(uuid);
+      } catch (error) {
+        console.error('Logout failed:', error);
+      }
+    }
+    logout();
+    navigate('/');
+    setDrawerOpen(false);
+  };
 
   const menuItems = [
-    { label: '로그아웃', path: '/' },
-    { label: '이사예약하기', path: '/move/calendar' },
-    { label: '나의예약', path: '/move/list' },
+    { label: '로그아웃', path: '/', action: handleLogout },
+    { label: '이사예약하기', path: `/move/${uuid}/calendar` },
+    { label: '나의예약', path: `/move/${uuid}/list` },
   ];
 
   return (
@@ -42,13 +59,17 @@ export default function MoveLayout() {
               <Typography variant="h6" fontWeight={700}>
                 입주이사 예약
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                창원동읍 한양 립스 더퍼스트
-              </Typography>
+              {isAuthenticated && user && (
+                <Typography variant="body2" color="text.secondary">
+                  {user.dong} {user.ho} {user.contractor_name}
+                </Typography>
+              )}
             </Box>
-            <IconButton onClick={() => setDrawerOpen(true)}>
-              <Menu />
-            </IconButton>
+            {isAuthenticated && (
+              <IconButton onClick={() => setDrawerOpen(true)}>
+                <Menu />
+              </IconButton>
+            )}
           </Box>
         </Box>
 
@@ -69,8 +90,12 @@ export default function MoveLayout() {
                 <ListItem key={item.label} disablePadding>
                   <ListItemButton
                     onClick={() => {
-                      navigate(item.path);
-                      setDrawerOpen(false);
+                      if (item.action) {
+                        item.action();
+                      } else {
+                        navigate(item.path);
+                        setDrawerOpen(false);
+                      }
                     }}
                   >
                     <ListItemText primary={item.label} />

@@ -94,9 +94,9 @@ const router = createBrowserRouter([
       </Suspense>
     ),
   },
-  // 이사예약 (헤더 있는 레이아웃)
+  // 이사예약 (UUID 기반 URL, 헤더 있는 레이아웃)
   {
-    path: '/move',
+    path: '/move/:uuid',
     element: (
       <Suspense fallback={<LoadingFallback />}>
         <MoveLayout />

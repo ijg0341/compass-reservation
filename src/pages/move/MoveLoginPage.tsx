@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,10 +22,12 @@ import {
   TextField,
   Alert,
   Divider,
+  CircularProgress,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { useAuthStore } from '../../stores/authStore';
-import type { MoveUser } from '../../types/move';
+import { useAuthStore, type MoveAuthUser } from '../../stores/authStore';
+import { moveApi } from '../../lib/api';
+import type { CustomerDonghoData, CustomerMoveInfoData } from '../../types';
 
 const agreementSchema = z.object({
   termsOfService: z.boolean().refine((val) => val === true, {
@@ -40,9 +42,8 @@ const agreementSchema = z.object({
 });
 
 const loginSchema = z.object({
-  apartment: z.string().min(1, '아파트를 선택해주세요.'),
   dong: z.string().min(1, '동을 선택해주세요.'),
-  ho: z.string().min(1, '호수를 선택해주세요.'),
+  donghoId: z.number().min(1, '호수를 선택해주세요.'),
   username: z.string().min(1, '아이디를 입력해주세요.'),
   password: z.string().min(1, '비밀번호를 입력해주세요.'),
 });
@@ -50,26 +51,21 @@ const loginSchema = z.object({
 type AgreementFormData = z.infer<typeof agreementSchema>;
 type LoginFormData = z.infer<typeof loginSchema>;
 
-const apartments = ['래미안 아파트', '자이 아파트', '힐스테이트'];
-const dongs = ['101동', '102동', '103동', '104동', '105동'];
-const hos = [
-  '101호',
-  '102호',
-  '201호',
-  '202호',
-  '301호',
-  '302호',
-  '401호',
-  '402호',
-];
-
 const steps = ['약관동의', '나의집 찾기 & 로그인'];
 
 export default function MoveLoginPage() {
+  const { uuid } = useParams<{ uuid: string }>();
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [activeStep, setActiveStep] = useState(0);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // API 데이터
+  const [moveInfo, setMoveInfo] = useState<CustomerMoveInfoData | null>(null);
+  const [donghos, setDonghos] = useState<CustomerDonghoData[]>([]);
+  const [dongsLoading, setDongsLoading] = useState(false);
 
   const agreementForm = useForm<AgreementFormData>({
     resolver: zodResolver(agreementSchema),
@@ -83,33 +79,126 @@ export default function MoveLoginPage() {
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      apartment: '',
       dong: '',
-      ho: '',
+      donghoId: 0,
       username: '',
       password: '',
     },
   });
 
+  const selectedDong = loginForm.watch('dong');
+
+  // 이사예약 정보 및 동호 목록 조회
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      if (!uuid) return;
+
+      try {
+        setIsInitializing(true);
+        // 이사예약 정보 조회
+        const infoResponse = await moveApi.getMoveInfo(uuid);
+        if (infoResponse.code === 0 && infoResponse.data) {
+          setMoveInfo(infoResponse.data);
+
+          // 동호 목록 조회 (project_id 기반)
+          // 주의: 현재 API는 project UUID가 필요하지만, moveInfo에는 project_id만 있음
+          // 임시로 uuid를 사용하거나 별도 처리 필요
+        }
+      } catch (error) {
+        console.error('Failed to fetch move info:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [uuid]);
+
+  // 동호 목록 조회 (약관 동의 후)
+  useEffect(() => {
+    const fetchDonghos = async () => {
+      if (!moveInfo?.project_uuid || activeStep !== 1) return;
+
+      try {
+        setDongsLoading(true);
+        // 전체 동호 목록 조회 (project_uuid 사용)
+        const donghosResponse = await moveApi.getDonghos(moveInfo.project_uuid);
+        if (donghosResponse.code === 0 && donghosResponse.data?.list) {
+          setDonghos(donghosResponse.data.list);
+        }
+      } catch (error) {
+        console.error('Failed to fetch donghos:', error);
+      } finally {
+        setDongsLoading(false);
+      }
+    };
+
+    fetchDonghos();
+  }, [moveInfo?.project_uuid, activeStep]);
+
+  // 동 목록 (중복 제거)
+  const dongs = useMemo(() => {
+    const uniqueDongs = [...new Set(donghos.map((d) => d.dong))];
+    return uniqueDongs.sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, '')) || 0;
+      const numB = parseInt(b.replace(/\D/g, '')) || 0;
+      return numA - numB;
+    });
+  }, [donghos]);
+
+  // 선택된 동의 호 목록
+  const hoList = useMemo(() => {
+    if (!selectedDong) return [];
+    return donghos
+      .filter((d) => d.dong === selectedDong)
+      .sort((a, b) => {
+        const numA = parseInt(a.ho.replace(/\D/g, '')) || 0;
+        const numB = parseInt(b.ho.replace(/\D/g, '')) || 0;
+        return numA - numB;
+      });
+  }, [donghos, selectedDong]);
+
   const handleAgreementSubmit = agreementForm.handleSubmit(() => {
     setActiveStep(1);
   });
 
-  const handleLoginSubmit = loginForm.handleSubmit((data) => {
+  const handleLoginSubmit = loginForm.handleSubmit(async (data) => {
+    if (!uuid) return;
+
     setLoginError(null);
+    setIsLoading(true);
 
-    // 어떤 계정이든 로그인 허용
-    const user: MoveUser = {
-      id: '1',
-      username: data.username,
-      apartmentName: data.apartment,
-      dong: data.dong,
-      ho: data.ho,
-      contractorName: '홍길동',
-    };
+    try {
+      const response = await moveApi.login(uuid, {
+        dongho_id: data.donghoId,
+        user_id: data.username,
+        password: data.password,
+      });
 
-    login(user);
-    navigate('/move/calendar');
+      if (response.code === 0 && response.data) {
+        const userData: MoveAuthUser = {
+          ...response.data,
+          moveUuid: uuid,
+        };
+        login(userData);
+        navigate(`/move/${uuid}/calendar`);
+      } else {
+        setLoginError(response.message || '로그인에 실패했습니다.');
+      }
+    } catch (error: unknown) {
+      console.error('Login failed:', error);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        setLoginError(
+          axiosError.response?.data?.message ||
+            '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.'
+        );
+      } else {
+        setLoginError('로그인에 실패했습니다. 네트워크 상태를 확인해주세요.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   });
 
   const handleAgreeAll = (checked: boolean) => {
@@ -122,6 +211,30 @@ export default function MoveLoginPage() {
     agreementForm.watch('termsOfService') &&
     agreementForm.watch('privacyPolicy') &&
     agreementForm.watch('moveRules');
+
+  // 동 변경 시 호 초기화
+  const handleDongChange = (dong: string) => {
+    loginForm.setValue('dong', dong);
+    loginForm.setValue('donghoId', 0);
+  };
+
+  if (isInitializing) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!moveInfo) {
+    return (
+      <Box>
+        <Alert severity="error">
+          이사예약 정보를 불러올 수 없습니다. URL을 확인해주세요.
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -308,73 +421,66 @@ export default function MoveLoginPage() {
           </Typography>
           <Divider sx={{ mb: 2 }} />
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Controller
-              name="apartment"
-              control={loginForm.control}
-              render={({ field, fieldState }) => (
-                <FormControl fullWidth error={!!fieldState.error}>
-                  <InputLabel>아파트</InputLabel>
-                  <Select {...field} label="아파트">
-                    {apartments.map((apt) => (
-                      <MenuItem key={apt} value={apt}>
-                        {apt}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {fieldState.error && (
-                    <Typography color="error" variant="caption">
-                      {fieldState.error.message}
-                    </Typography>
-                  )}
-                </FormControl>
-              )}
-            />
+          {dongsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Controller
+                name="dong"
+                control={loginForm.control}
+                render={({ field, fieldState }) => (
+                  <FormControl fullWidth error={!!fieldState.error}>
+                    <InputLabel>동</InputLabel>
+                    <Select
+                      {...field}
+                      label="동"
+                      onChange={(e) => handleDongChange(e.target.value)}
+                    >
+                      {dongs.map((d) => (
+                        <MenuItem key={d} value={d}>
+                          {d}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {fieldState.error && (
+                      <Typography color="error" variant="caption">
+                        {fieldState.error.message}
+                      </Typography>
+                    )}
+                  </FormControl>
+                )}
+              />
 
-            <Controller
-              name="dong"
-              control={loginForm.control}
-              render={({ field, fieldState }) => (
-                <FormControl fullWidth error={!!fieldState.error}>
-                  <InputLabel>동</InputLabel>
-                  <Select {...field} label="동">
-                    {dongs.map((d) => (
-                      <MenuItem key={d} value={d}>
-                        {d}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {fieldState.error && (
-                    <Typography color="error" variant="caption">
-                      {fieldState.error.message}
-                    </Typography>
-                  )}
-                </FormControl>
-              )}
-            />
-
-            <Controller
-              name="ho"
-              control={loginForm.control}
-              render={({ field, fieldState }) => (
-                <FormControl fullWidth error={!!fieldState.error}>
-                  <InputLabel>호</InputLabel>
-                  <Select {...field} label="호">
-                    {hos.map((h) => (
-                      <MenuItem key={h} value={h}>
-                        {h}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {fieldState.error && (
-                    <Typography color="error" variant="caption">
-                      {fieldState.error.message}
-                    </Typography>
-                  )}
-                </FormControl>
-              )}
-            />
-          </Box>
+              <Controller
+                name="donghoId"
+                control={loginForm.control}
+                render={({ field, fieldState }) => (
+                  <FormControl fullWidth error={!!fieldState.error} disabled={!selectedDong}>
+                    <InputLabel>호</InputLabel>
+                    <Select
+                      {...field}
+                      label="호"
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    >
+                      {hoList.map((h) => (
+                        <MenuItem key={h.id} value={h.id}>
+                          {h.ho}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {fieldState.error && (
+                      <Typography color="error" variant="caption">
+                        {fieldState.error.message}
+                      </Typography>
+                    )}
+                  </FormControl>
+                )}
+              />
+            </Box>
+          )}
 
           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>
             로그인
@@ -437,9 +543,10 @@ export default function MoveLoginPage() {
               fullWidth
               size="large"
               onClick={handleLoginSubmit}
+              disabled={isLoading}
               sx={{ py: 1.5 }}
             >
-              로그인
+              {isLoading ? <CircularProgress size={24} /> : '로그인'}
             </Button>
           </Box>
         </Box>

@@ -4,12 +4,24 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { MoveUser } from '../types/move';
+import type { CustomerMoveLoginData } from '../types';
+
+/**
+ * 이사예약 사용자 정보 (API 응답 + 추가 정보)
+ */
+export interface MoveAuthUser extends CustomerMoveLoginData {
+  moveUuid: string;
+  projectUuid?: string;
+}
 
 interface AuthState {
-  user: MoveUser | null;
+  user: MoveAuthUser | null;
   isAuthenticated: boolean;
-  login: (user: MoveUser) => void;
+  moveUuid: string | null;
+  projectUuid: string | null;
+  setMoveUuid: (uuid: string) => void;
+  setProjectUuid: (uuid: string) => void;
+  login: (user: MoveAuthUser) => void;
   logout: () => void;
 }
 
@@ -22,15 +34,33 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
+      moveUuid: null,
+      projectUuid: null,
+
+      /**
+       * 이사예약 UUID 설정
+       */
+      setMoveUuid: (uuid: string) => {
+        set({ moveUuid: uuid });
+      },
+
+      /**
+       * 프로젝트 UUID 설정
+       */
+      setProjectUuid: (uuid: string) => {
+        set({ projectUuid: uuid });
+      },
 
       /**
        * 로그인 처리
-       * @param user - 사용자 정보
+       * @param user - 사용자 정보 (API 응답)
        */
-      login: (user: MoveUser) => {
+      login: (user: MoveAuthUser) => {
         set({
           user,
           isAuthenticated: true,
+          moveUuid: user.moveUuid,
+          projectUuid: user.projectUuid || null,
         });
       },
 
@@ -45,7 +75,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: 'move-auth-storage',
     }
   )
 );

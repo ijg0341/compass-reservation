@@ -18,3 +18,6 @@ export {
   getPrevisitDonghos,
   createPrevisitReservation,
 } from './previsitApi';
+
+// 이사예약 API
+export { moveApi } from './moveApi';
